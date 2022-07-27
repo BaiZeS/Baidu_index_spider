@@ -75,7 +75,7 @@ if __name__ == "__main__":
                         time.sleep(sleep_time)
 
                 # 将百度指数写入数据库
-                insert_result(index_list, tables_name[count], title_col[count], keywords_list)
+                insert_result(index_list, tables_name[count], title_col[count])
                 count = count + 1       # 计数器自加
         else:
             # 每隔1小时查询一次时间

@@ -87,7 +87,7 @@ def get_keywords():
     return film_list, tv_list, show_list
 
 
-def insert_result(res_list, table_name, title_col, keywords_list):
+def insert_result(res_list, table_name, title_col):
     '''将百度指数写入mysql
     -----------------------------------
     res_list:将写入数据库的数据;
@@ -96,8 +96,10 @@ def insert_result(res_list, table_name, title_col, keywords_list):
     '''
     # 连接数据库
     conn = connect_mysql('mediadata')
+    # 查询总表中已存在数据
+    title_list = [one[0] for one in query_mysql(conn, 'select name from %s' % table_name)]
     # 判断是否在数据库里
-    if title_col not in keywords_list:
+    if title_col not in title_list:
         # 写入数据库
         if table_name == 'teleplay_all':
             execute_mysql(conn, 'replace into %s (%s, 演员, 腾讯视频_总讨论数, 百度_平均搜索指数, 百度_平均资讯指数, 百度_男比例, 百度_女比例, 百度_0到19年龄比例, 百度_20到29年龄比例, 百度_30到39年龄比例, 百度_40到49年龄比例, 百度_50以上年龄比例) values' % (table_name, title_col) + "(%s, 'Null', '-1', "+(("%"+"s,")*9)[0:-1]+")", res_list)
