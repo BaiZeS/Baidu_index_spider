@@ -84,6 +84,13 @@ def get_keywords():
     show_list.extend([one[0] for one in query_mysql(conn, 'select name from 腾讯视频_综艺榜')])
     close_mysql(conn)
 
+    # 获取优酷数据
+    conn = connect_mysql('yk_data')
+    film_list.extend([one[0] for one in query_mysql(conn, 'select name from 优酷_热播榜_电影')])
+    tv_list.extend([one[0] for one in query_mysql(conn, 'select name from 优酷_热播榜_剧集')])
+    show_list.extend([one[0] for one in query_mysql(conn, 'select name from 优酷_热播榜_综艺')])
+    close_mysql(conn)
+
     return film_list, tv_list, show_list
 
 
@@ -97,15 +104,23 @@ def insert_result(res_list, table_name, title_col):
     # 连接数据库
     conn = connect_mysql('mediadata')
     # 查询总表中已存在数据
-    title_list = [one[0] for one in query_mysql(conn, 'select name from %s' % table_name)]
+    title_list = [one[0] for one in query_mysql(conn, 'select %s from %s' % (title_col, table_name))]
+    # 获取当前关键字
+    keyword = res_list[-1]
     # 判断是否在数据库里
-    if title_col not in title_list:
+    if keyword not in title_list:
+        # 重新构造写入数据
+        res_list = res_list[0:-1]
+        res_list.insert(0, keyword)
+        res_list = [tuple(res_list)]
         # 写入数据库
         if table_name == 'teleplay_all':
             execute_mysql(conn, 'replace into %s (%s, 演员, 腾讯视频_总讨论数, 百度_平均搜索指数, 百度_平均资讯指数, 百度_男比例, 百度_女比例, 百度_0到19年龄比例, 百度_20到29年龄比例, 百度_30到39年龄比例, 百度_40到49年龄比例, 百度_50以上年龄比例) values' % (table_name, title_col) + "(%s, 'Null', '-1', "+(("%"+"s,")*9)[0:-1]+")", res_list)
         else:
             execute_mysql(conn, 'replace into %s (%s, 百度_平均搜索指数, 百度_平均资讯指数, 百度_男比例, 百度_女比例, 百度_0到19年龄比例, 百度_20到29年龄比例, 百度_30到39年龄比例, 百度_40到49年龄比例, 百度_50以上年龄比例) values' % (table_name, title_col) + "("+(("%"+"s,")*10)[0:-1]+")", res_list)
     else:
+        # 重构写入数据
+        res_list = [tuple(res_list)]
         # 更新数据库（keywords需要放在最后）
         execute_mysql(conn,'update %s set 百度_平均搜索指数=%s, 百度_平均资讯指数=%s, 百度_男比例=%s, 百度_女比例=%s, 百度_0到19年龄比例=%s, 百度_20到29年龄比例=%s, 百度_30到39年龄比例=%s, 百度_40到49年龄比例=%s, 百度_50以上年龄比例=%s where %s=%s' % (table_name, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', title_col, '%s'), res_list)
     # 关闭数据库连接

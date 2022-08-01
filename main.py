@@ -47,20 +47,17 @@ if __name__ == "__main__":
 
             # 抓取对应关键词的百度指数
             for keywords_list in data_list:
-                # 定义百度指数数据列表
-                index_list = []
-
                 # 分别存入对应数据表单
                 for keywords in keywords_list:
+                    # 定义百度指数数据列表
+                    index_list = []
                     try:
                         sex_rate, age_rate = get_social_describe(headers, keywords)
                         feed_index = get_feed_index(headers, keywords, days)
                         search_index = get_search_index(headers, keywords, days)
 
-                        # # 拼接数据列表->list[tuple()]
-                        # index_list.append((keywords, search_index, feed_index, sex_rate['男'], sex_rate['女'], age_rate['0-19'], age_rate['20-29'], age_rate['30-39'], age_rate['40-49'], age_rate['50+']))
                         # 拼接更新数据表
-                        index_list.append((search_index, feed_index, sex_rate['男'], sex_rate['女'], age_rate['0-19'], age_rate['20-29'], age_rate['30-39'], age_rate['40-49'], age_rate['50+'], keywords))
+                        index_list.append(search_index, feed_index, sex_rate['男'], sex_rate['女'], age_rate['0-19'], age_rate['20-29'], age_rate['30-39'], age_rate['40-49'], age_rate['50+'], keywords)
                         print('title %s, and the count of title: %s' % (keywords, len(index_list)))
 
                     except Exception as e:
@@ -69,14 +66,15 @@ if __name__ == "__main__":
                         error_log.write('spider error of %s at %s because %s\n' % (keywords, str(time_now), repr(e)))
                         
                     finally:
+                        # 将百度指数写入数据库
+                        insert_result(index_list, tables_name[count], title_col[count])
                         # 每次爬取间隔随机时间(10~15s)
                         sleep_time = round(randint(10, 15)+random(), 3)
                         print('sleep time is %s' % sleep_time)
                         time.sleep(sleep_time)
-
-                # 将百度指数写入数据库
-                insert_result(index_list, tables_name[count], title_col[count])
-                count = count + 1       # 计数器自加
+                
+                # 计数器自加
+                count = count + 1
         else:
             # 每隔1小时查询一次时间
             print('check time now: %s' % str(time_now))
